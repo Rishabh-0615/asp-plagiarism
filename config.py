@@ -9,6 +9,10 @@ class Config:
     TESTING = False
     PORT = int(os.getenv('PORT', 5000))
     FLASK_ENV = os.getenv('FLASK_ENV', 'production')
+    ALLOWED_ORIGINS = [origin.strip() for origin in os.getenv(
+        'ALLOWED_ORIGINS',
+        'http://localhost:5173,http://127.0.0.1:5173'
+    ).split(',') if origin.strip()]
 
 class DevelopmentConfig(Config):
     """Development configuration"""
