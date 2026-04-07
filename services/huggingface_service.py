@@ -1,6 +1,7 @@
 """Hugging Face Inference API Service for AI Detection"""
 import requests
 import logging
+from requests.adapters import HTTPAdapter
 from config import HF_API_TOKEN, HF_MODEL_ID
 
 logger = logging.getLogger(__name__)
@@ -11,8 +12,12 @@ class HuggingFaceService:
         self.model_id = HF_MODEL_ID
         self.api_url = f"https://router.huggingface.co/hf-inference/models/{self.model_id}"
         self.headers = {"Authorization": f"Bearer {self.api_token}"}
+        self.session = requests.Session()
+        adapter = HTTPAdapter(pool_connections=20, pool_maxsize=20, max_retries=0)
+        self.session.mount("https://", adapter)
+        self.session.mount("http://", adapter)
 
-    def _chunk_text(self, text: str, max_words: int = 90, overlap: int = 15) -> list[str]:
+    def _chunk_text(self, text: str, max_words: int = 220, overlap: int = 30) -> list[str]:
         words = text.split()
         if len(words) <= max_words:
             return [text]
@@ -32,11 +37,11 @@ class HuggingFaceService:
         """Score a single text chunk with the HF detector model."""
         payload = {"inputs": text}
 
-        response = requests.post(
+        response = self.session.post(
             self.api_url,
             headers=self.headers,
             json=payload,
-            timeout=30
+            timeout=(5, 30)
         )
 
         if response.status_code != 200:
